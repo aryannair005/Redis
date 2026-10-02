@@ -44,6 +44,8 @@ app.post("/verify-otp",async(req,res)=>{
         return res.status(400).json({message:"Invalid Otp"})
     }
 
+    await redis.del(`otp:${email}`)
+
     return res.json({message:"Otp verified"});
 })
 
