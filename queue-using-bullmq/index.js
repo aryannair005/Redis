@@ -3,7 +3,8 @@ import dotenv, { parse } from "dotenv"
 import { connectDB } from "./config/db.config.js"
 import User from "./models/user.model.js"
 import Redis from "ioredis"
-import rateLimitter from "./middlewares/rate-limiter.js"
+import sendEmail from "./config/sendEmail.config.js"
+import emailQueue from "./queue.js"
 
 
 dotenv.config()
@@ -17,7 +18,7 @@ app.use(express.json())
 
 
 // Redis Instance
-export const redis = new Redis(process.env.REDIS_URL)
+const redis = new Redis(process.env.REDIS_URL)
 
 
 connectDB()
@@ -53,6 +54,9 @@ app.post("/create", async (req, res) => {
 
         const user = await User.create({ name, email });
         await redis.del("user:all")
+        
+        // Adding email job to queue
+       await emailQueue.add("send-email",{email})
 
         return res.status(201).json({ user });
 
@@ -63,10 +67,3 @@ app.post("/create", async (req, res) => {
         });
     }
 });
-
-
-app.get("/get-users",rateLimitter,async(req,res)=>{
-    const users = await User.find({})
-
-    return res.status(200).json({users})
-})

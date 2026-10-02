@@ -51,7 +51,7 @@ app.post("/create", async (req, res) => {
         }
 
         const user = await User.create({ name, email });
-        await redis.det("user:all")
+        await redis.del("user:all")
 
         return res.status(201).json({ user });
 
